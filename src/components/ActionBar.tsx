@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAsciiStore } from "@/store/useAsciiStore";
-import { Copy, Download, RotateCcw, Check } from "lucide-react";
+import { Copy, Check, Save, RotateCcw } from "lucide-react";
 
 const ActionBar = () => {
-  const { asciiArt, params, generateAscii, imageState } = useAsciiStore();
+  const { asciiArt, imageState, generateAscii, saveToHistory } = useAsciiStore();
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const handleCopy = async () => {
     if (!asciiArt) return;
@@ -17,17 +18,11 @@ const ActionBar = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleSave = () => {
     if (!asciiArt) return;
-    const blob = new Blob([asciiArt], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ascii-art-${params.width}w-${params.charSetId}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    saveToHistory();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleReset = () => {
@@ -42,8 +37,9 @@ const ActionBar = () => {
         onClick={handleCopy}
         disabled={isDisabled}
         className={`
-          flex-1 min-w-[120px] py-3 px-4 rounded-xl font-semibold
+          flex-1 min-w-[100px] py-2.5 px-4 rounded-xl font-semibold
           flex items-center justify-center gap-2 transition-all duration-300
+          text-sm
           ${
             copied
               ? "bg-green-500 text-white shadow-glow"
@@ -55,49 +51,61 @@ const ActionBar = () => {
       >
         {copied ? (
           <>
-            <Check size={18} />
+            <Check size={16} />
             已复制!
           </>
         ) : (
           <>
-            <Copy size={18} />
-            复制到剪贴板
+            <Copy size={16} />
+            复制
           </>
         )}
       </button>
 
       <button
-        onClick={handleDownload}
+        onClick={handleSave}
         disabled={isDisabled}
         className={`
-          flex-1 min-w-[120px] py-3 px-4 rounded-xl font-semibold border
+          flex-1 min-w-[100px] py-2.5 px-4 rounded-xl font-semibold border
           flex items-center justify-center gap-2 transition-all duration-300
+          text-sm
           ${
-            isDisabled
+            saved
+              ? "border-green-500 text-green-400 bg-green-500/10"
+              : isDisabled
               ? "border-terminal-border/50 text-terminal-green/30 cursor-not-allowed"
-              : "border-terminal-cyan text-terminal-cyan hover:bg-terminal-cyan/10 hover:border-terminal-cyan hover:shadow-glowCyan active:scale-[0.98]"
+              : "border-terminal-amber text-terminal-amber hover:bg-terminal-amber/10 hover:shadow-glowAmber active:scale-[0.98]"
           }
         `}
       >
-        <Download size={18} />
-        下载 TXT
+        {saved ? (
+          <>
+            <Check size={16} />
+            已保存
+          </>
+        ) : (
+          <>
+            <Save size={16} />
+            保存记录
+          </>
+        )}
       </button>
 
       <button
         onClick={handleReset}
         disabled={isDisabled}
         className={`
-          py-3 px-4 rounded-xl border transition-all duration-300
+          py-2.5 px-4 rounded-xl border transition-all duration-300
           flex items-center justify-center gap-2
           ${
             isDisabled
               ? "border-terminal-border/50 text-terminal-green/30 cursor-not-allowed"
-              : "border-terminal-border text-terminal-green/70 hover:border-terminal-amber hover:text-terminal-amber active:scale-[0.95]"
+              : "border-terminal-border text-terminal-green/70 hover:border-terminal-cyan hover:text-terminal-cyan active:scale-[0.95]"
           }
         `}
         title="重置为生成的原始字符画"
       >
-        <RotateCcw size={18} />
+        <RotateCcw size={16} />
       </button>
     </div>
   );

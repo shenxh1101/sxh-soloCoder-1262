@@ -36,11 +36,22 @@ export const generateAsciiArt = (
   invert: boolean
 ): string => {
   const { data, width: imgWidth, height: imgHeight } = imageData;
+
+  if (imgWidth === 0 || imgHeight === 0 || width <= 0) {
+    return "";
+  }
+
   const aspectRatio = imgHeight / imgWidth;
-  const charHeight = Math.floor(width * aspectRatio * 0.5);
+  let charHeight = Math.floor(width * aspectRatio * 0.5);
+
+  if (charHeight < 1) {
+    charHeight = 1;
+  }
+
+  const safeWidth = Math.max(1, Math.floor(width));
 
   const canvas = document.createElement("canvas");
-  canvas.width = width;
+  canvas.width = safeWidth;
   canvas.height = charHeight;
   const ctx = canvas.getContext("2d");
 
@@ -59,16 +70,16 @@ export const generateAsciiArt = (
 
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(srcCanvas, 0, 0, width, charHeight);
+  ctx.drawImage(srcCanvas, 0, 0, safeWidth, charHeight);
 
-  const scaledData = ctx.getImageData(0, 0, width, charHeight).data;
+  const scaledData = ctx.getImageData(0, 0, safeWidth, charHeight).data;
 
   const lines: string[] = [];
 
   for (let y = 0; y < charHeight; y++) {
     let line = "";
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4;
+    for (let x = 0; x < safeWidth; x++) {
+      const idx = (y * safeWidth + x) * 4;
       const r = scaledData[idx];
       const g = scaledData[idx + 1];
       const b = scaledData[idx + 2];
