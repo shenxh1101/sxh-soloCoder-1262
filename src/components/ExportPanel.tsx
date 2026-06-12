@@ -1,11 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAsciiStore } from "@/store/useAsciiStore";
 import { exportAsTxt, exportAsPng, exportAsHtml } from "@/utils/exportUtils";
-import { Download, FileText, Image, Code, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Image,
+  Code,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Loader2,
+} from "lucide-react";
 
 const ExportPanel = () => {
-  const { asciiArt, exportSettings, setExportSettings, saveToHistory } = useAsciiStore();
+  const { asciiArt, exportSettings, setExportSettings, saveToHistory } =
+    useAsciiStore();
   const [expanded, setExpanded] = useState(true);
+  const [showPreview, setShowPreview] = useState(true);
   const [exporting, setExporting] = useState(false);
 
   const isDisabled = !asciiArt;
@@ -51,6 +63,17 @@ const ExportPanel = () => {
     { name: "黑纸白字", fg: "#ffffff", bg: "#000000" },
   ];
 
+  const previewLines = useMemo(() => {
+    if (!asciiArt) return "";
+    const lines = asciiArt.split("\n");
+    const maxPreviewLines = 12;
+    const maxPreviewChars = 60;
+    return lines
+      .slice(0, maxPreviewLines)
+      .map((l) => l.slice(0, maxPreviewChars))
+      .join("\n");
+  }, [asciiArt]);
+
   return (
     <div className="bg-terminal-bgDark/50 border border-terminal-border rounded-xl overflow-hidden backdrop-blur-sm">
       <button
@@ -72,6 +95,63 @@ const ExportPanel = () => {
 
       {expanded && (
         <div className="p-4 space-y-4">
+          {/* 导出预览 */}
+          <div className="border border-terminal-border/50 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-terminal-border/30 bg-terminal-bg/50">
+              <div className="flex items-center gap-1.5 text-[11px] text-terminal-green/70">
+                <Eye size={12} />
+                导出预览
+              </div>
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className={`
+                  text-[10px] px-2 py-0.5 rounded transition-colors
+                  ${
+                    showPreview
+                      ? "text-terminal-green bg-terminal-green/10"
+                      : "text-terminal-green/40 hover:text-terminal-green/70"
+                  }
+                `}
+              >
+                {showPreview ? "隐藏" : "显示"}
+              </button>
+            </div>
+            {showPreview && (
+              <div
+                className="overflow-auto max-h-36"
+                style={{ backgroundColor: exportSettings.backgroundColor }}
+              >
+                {asciiArt ? (
+                  <pre
+                    className="whitespace-pre font-mono"
+                    style={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: `${Math.min(exportSettings.fontSize, 12)}px`,
+                      lineHeight: 1.2,
+                      color: exportSettings.foregroundColor,
+                      padding: `${Math.min(exportSettings.padding, 16)}px`,
+                      textShadow: `0 0 6px ${exportSettings.foregroundColor}40`,
+                    }}
+                  >
+                    {previewLines}
+                    {asciiArt.split("\n").length > 12 && (
+                      <div
+                        className="mt-2 text-center opacity-60"
+                        style={{ fontSize: `${Math.min(exportSettings.fontSize - 2, 10)}px` }}
+                      >
+                        ... 还有 {asciiArt.split("\n").length - 12} 行
+                      </div>
+                    )}
+                  </pre>
+                ) : (
+                  <div className="p-6 text-center text-xs text-terminal-green/30">
+                    生成字符画后可预览导出效果
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* 导出按钮 */}
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -82,11 +162,16 @@ const ExportPanel = () => {
                 ${
                   isDisabled
                     ? "opacity-50 cursor-not-allowed border-terminal-border"
-                    : "cursor-pointer border-terminal-border hover:border-terminal-green/50 hover:bg-terminal-green/5"
+                    : "cursor-pointer border-terminal-border hover:border-terminal-green/50 hover:bg-terminal-green/5 active:scale-95"
                 }
               `}
+              title="下载为纯文本文件"
             >
-              <FileText size={18} className="text-terminal-green/80" />
+              {exporting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <FileText size={18} className="text-terminal-green/80" />
+              )}
               <span className="text-[11px] text-terminal-green/70">TXT</span>
             </button>
             <button
@@ -97,11 +182,16 @@ const ExportPanel = () => {
                 ${
                   isDisabled
                     ? "opacity-50 cursor-not-allowed border-terminal-border"
-                    : "cursor-pointer border-terminal-cyan/50 hover:border-terminal-cyan hover:bg-terminal-cyan/5 text-terminal-cyan"
+                    : "cursor-pointer border-terminal-cyan/50 hover:border-terminal-cyan hover:bg-terminal-cyan/5 text-terminal-cyan active:scale-95"
                 }
               `}
+              title="下载为PNG图片，保留样式"
             >
-              <Image size={18} />
+              {exporting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Image size={18} />
+              )}
               <span className="text-[11px]">PNG</span>
             </button>
             <button
@@ -112,11 +202,16 @@ const ExportPanel = () => {
                 ${
                   isDisabled
                     ? "opacity-50 cursor-not-allowed border-terminal-border"
-                    : "cursor-pointer border-terminal-amber/50 hover:border-terminal-amber hover:bg-terminal-amber/5 text-terminal-amber"
+                    : "cursor-pointer border-terminal-amber/50 hover:border-terminal-amber hover:bg-terminal-amber/5 text-terminal-amber active:scale-95"
                 }
               `}
+              title="下载为HTML网页，带发光效果"
             >
-              <Code size={18} />
+              {exporting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Code size={18} />
+              )}
               <span className="text-[11px]">HTML</span>
             </button>
           </div>
@@ -187,12 +282,23 @@ const ExportPanel = () => {
                         backgroundColor: preset.bg,
                       })
                     }
-                    className="p-1.5 rounded border border-terminal-border/50 hover:border-terminal-green/50 transition-colors"
+                    className={`
+                      p-1.5 rounded border transition-colors
+                      ${
+                        exportSettings.foregroundColor === preset.fg &&
+                        exportSettings.backgroundColor === preset.bg
+                          ? "border-terminal-green/60 bg-terminal-green/5"
+                          : "border-terminal-border/50 hover:border-terminal-green/50"
+                      }
+                    `}
                     title={preset.name}
                   >
                     <div
                       className="w-full h-4 rounded-sm flex items-center justify-center text-[8px] font-mono"
-                      style={{ backgroundColor: preset.bg, color: preset.fg }}
+                      style={{
+                        backgroundColor: preset.bg,
+                        color: preset.fg,
+                      }}
                     >
                       Aa
                     </div>
